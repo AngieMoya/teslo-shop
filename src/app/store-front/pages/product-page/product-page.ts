@@ -2,10 +2,11 @@ import { Component, inject, input } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ProductsService } from '@products/services/products.service';
 import { ActivatedRoute } from '@angular/router';
+import { ProductCarousel } from '@products/components/product-carousel/product-carousel';
 
 @Component({
   selector: 'app-product-page',
-  imports: [],
+  imports: [ProductCarousel],
   templateUrl: './product-page.html',
 })
 export class ProductPage {
@@ -17,7 +18,6 @@ export class ProductPage {
   productResource = rxResource({
     params: () => ({ idSlug: this.productIdSlug }),
     stream: ({ params }) => {
-      console.log(params);
       return this.productService.getProductByIdSlug(params.idSlug);
     },
   });
