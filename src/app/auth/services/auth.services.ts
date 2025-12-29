@@ -44,17 +44,16 @@ export class AuthService {
       );
   }
 
-  checkStatus(): Observable<boolean> {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      this.logout();
-      return of(false);
-    }
+  register(
+    email: string,
+    password: string,
+    fullName: string
+  ): Observable<boolean> {
     return this.http
-      .get<AuthResponse>(`${baseUrl}/auth/check-status`, {
-        //headers: {
-        //  Authorization: `Bearer ${token}`,
-        //},
+      .post<AuthResponse>(`${baseUrl}/auth/register`, {
+        email,
+        password,
+        fullName,
       })
       .pipe(
         map((resp) => this.handleAuthSucces(resp)),
@@ -62,12 +61,24 @@ export class AuthService {
       );
   }
 
+  checkStatus(): Observable<boolean> {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.logout();
+      return of(false);
+    }
+    return this.http.get<AuthResponse>(`${baseUrl}/auth/check-status`, {}).pipe(
+      map((resp) => this.handleAuthSucces(resp)),
+      catchError((error: any) => this.handleAuthError(error))
+    );
+  }
+
   logout() {
     this._user.set(null);
     this._token.set(null);
     this._authStatus.set('not-authenticated');
 
-    //localStorage.removeItem('token');
+    localStorage.removeItem('token');
   }
 
   private handleAuthSucces({ token, user }: AuthResponse) {
