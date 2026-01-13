@@ -3,14 +3,17 @@ import { Product } from '@products/interfaces/product.interface';
 import { ProductCarousel } from '@products/components/product-carousel/product-carousel';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormUtils } from '@utils/form-utils';
+import { FormErrorLabel } from '@shared/components/pagination/form-error-label/form-error-label';
+import { ProductsService } from '@products/services/products.service';
 
 @Component({
   selector: 'product-details',
-  imports: [ProductCarousel, ReactiveFormsModule],
+  imports: [ProductCarousel, ReactiveFormsModule, FormErrorLabel],
   templateUrl: './product-details.html',
 })
 export class ProductDetails implements OnInit {
   product = input.required<Product>();
+  productsService = inject(ProductsService);
 
   fb = inject(FormBuilder);
   productForm = this.fb.group({
@@ -42,7 +45,38 @@ export class ProductDetails implements OnInit {
     this.productForm.patchValue({ tags: formLike.tags?.join(',') });
   }
 
+  onSizeClicked(size: string) {
+    const currentSizes = this.productForm.value.sizes ?? [];
+
+    if (currentSizes.includes(size)) {
+      currentSizes.splice(currentSizes.indexOf(size), 1);
+    } else {
+      currentSizes.push(size);
+    }
+
+    this.productForm.patchValue({ sizes: currentSizes });
+  }
+
   onSubmit() {
-    console.log(this.productForm.value);
+    const isValid = this.productForm.valid;
+    this.productForm.markAllAsTouched();
+
+    if (!isValid) return;
+    const formValue = this.productForm.value;
+
+    const productLike: Partial<Product> = {
+      ...(formValue as any),
+      tags:
+        formValue.tags
+          ?.toLowerCase()
+          .split(',')
+          .map((tag) => tag.trim()) ?? [],
+    };
+
+    this.productsService
+      .updateProduct(this.product().id, productLike)
+      .subscribe((product) => {
+        console.log('Update product!!!!');
+      });
   }
 }
