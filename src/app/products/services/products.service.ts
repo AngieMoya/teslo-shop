@@ -5,7 +5,7 @@ import {
   Product,
   ProductsResponse,
 } from '@products/interfaces/product.interface';
-import { forkJoin, map, Observable, of, tap } from 'rxjs';
+import { forkJoin, map, Observable, of, switchMap, tap } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 const baseUrl = environment.baseUrl;
@@ -85,14 +85,31 @@ export class ProductsService {
 
   updateProduct(
     id: string,
-    productlike: Partial<Product>
+    productlike: Partial<Product>,
+    imageFileList?: FileList
   ): Observable<Product> {
-    return this.http
-      .patch<Product>(`${baseUrl}/products/${id}`, productlike)
-      .pipe(tap((product) => this.updateProductCache(product)));
+    const currentImages = productlike.images ?? [];
+
+    return this.uploadImages(imageFileList).pipe(
+      map((imageNames) => ({
+        ...productlike,
+        images: [...currentImages, ...imageNames],
+      })),
+      switchMap((updatedProduct) =>
+        this.http.patch<Product>(`${baseUrl}/products/${id}`, updatedProduct)
+      ),
+      tap((product) => this.updateProductCache(product))
+    );
+
+    //return this.http
+    //  .patch<Product>(`${baseUrl}/products/${id}`, productlike)
+    //  .pipe(tap((product) => this.updateProductCache(product)));
   }
 
-  createProduct(productlike: Partial<Product>): Observable<Product> {
+  createProduct(
+    productlike: Partial<Product>,
+    imageFileList?: FileList
+  ): Observable<Product> {
     return this.http
       .post<Product>(`${baseUrl}/products`, productlike)
       .pipe(tap((product) => this.updateProductCache(product)));
